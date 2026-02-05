@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodMart</title>
+
+<style>
+:root {
+  --primary: #ff6b35;
+  --dark: #1f2937;
+  --light: #f9fafb;
+  --card: #ffffff;
+}
+
+* { box-sizing: border-box; }
+body { margin:0; font-family: "Segoe UI", Arial, sans-serif; background: var(--light); color: var(--dark); }
+
+header {
+  background: var(--card);
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+header h2 { margin: 0; color: var(--primary); }
+
+.btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-secondary { background: var(--dark); color: white; }
+
+.container, .dashboard { padding: 40px; max-width: 1100px; margin: auto; }
+.dashboard { display: none; }
+
+.card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+
+.home-card { max-width: 360px; margin: 80px auto; text-align: center; }
+.home-card h3 { margin-bottom: 15px; }
+
+select, input, textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px; }
+
+.products { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 25px; margin-top: 25px; }
+.product { background: var(--card); padding: 15px; border-radius: 14px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); transition: transform .2s; }
+.product:hover { transform: translateY(-4px); }
+.product img { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; }
+.product h4 { margin: 12px 0 6px; }
+.product p { margin: 0 0 12px; font-weight: bold; color: var(--primary); }
+
+.cart { margin-top: 40px; background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+
+.admin-form { max-width: 400px; background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+
+.review-section { margin-top: 15px; }
+.review-section textarea { resize: none; }
+.reviews { margin-top: 10px; font-size: 14px; color: #555; }
+.review { border-top: 1px solid #ddd; padding: 5px 0; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>FoodMart</h2>
+  <button class="btn btn-secondary" onclick="goHome()">Logout</button>
+</header>
+
+<!-- HOME -->
+<div class="container" id="home">
+  <div class="card home-card">
+    <h3>Welcome to FoodMart</h3>
+    <p>Select your role</p>
+    <select onchange="selectRole(this.value)">
+      <option value="">Choose Role</option>
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select>
+  </div>
+</div>
+
+<!-- USER DASHBOARD -->
+<div class="dashboard" id="userDash">
+  <h2>User Dashboard</h2>
+
+  <div class="products" id="userProducts"></div>
+
+  <div class="cart">
+    <h3>Cart</h3>
+    <ul id="cartItems"></ul>
+    <strong>Total: ₹<span id="total">0</span></strong>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="dashboard" id="adminDash">
+  <h2>Admin Dashboard</h2>
+  <div class="admin-form">
+    <input id="foodName" placeholder="Food Name">
+    <input id="foodPrice" type="number" placeholder="Price">
+    <input id="foodImg" type="file" accept="image/*">
+    <button class="btn btn-primary" onclick="addProduct()">Add Product</button>
+  </div>
+</div>
+
+<script>
+let products = [
+  { name:'Pizza', price:250, img:'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3', reviews:[] },
+  { name:'Burger', price:120, img:'https://images.unsplash.com/photo-1550547660-d9450f859349', reviews:[] }
+];
+
+let cart = [];
+
+function hideAll() {
+  home.style.display = userDash.style.display = adminDash.style.display = 'none';
+}
+
+function goHome() {
+  hideAll();
+  home.style.display = 'block';
+}
+
+function selectRole(role) {
+  hideAll();
+  if (role === 'user') {
+    userDash.style.display = 'block';
+    renderProducts();
+  }
+  if (role === 'admin') adminDash.style.display = 'block';
+}
+
+// ADMIN ADD PRODUCT
+function addProduct() {
+  if (!foodName.value || !foodPrice.value || !foodImg.files[0]) {
+    alert("Please fill all fields");
+    return;
+  }
+  products.push({
+    name: foodName.value,
+    price: Number(foodPrice.value),
+    img: URL.createObjectURL(foodImg.files[0]),
+    reviews: []
+  });
+  foodName.value = foodPrice.value = foodImg.value = '';
+  alert("Product added successfully");
+  renderProducts(); // Update user view
+}
+
+// USER PRODUCT DISPLAY
+function renderProducts() {
+  userProducts.innerHTML = '';
+  products.forEach((p,i) => {
+    let productHTML = `
+      <div class="product">
+        <img src="${p.img}">
+        <h4>${p.name}</h4>
+        <p>₹${p.price}</p>
+        <label>Quantity:</label>
+        <input type="number" id="qty${i}" min="1" value="1">
+        <button class="btn btn-primary" onclick="addToCart(${i})">Add to Cart</button>
+
+        <div class="review-section">
+          <textarea id="review${i}" rows="2" placeholder="Write a review..."></textarea>
+          <button class="btn btn-secondary" onclick="addReview(${i})">Submit Review</button>
+          <div class="reviews" id="reviews${i}"></div>
+        </div>
+      </div>`;
+    userProducts.innerHTML += productHTML;
+    renderReviews(i);
+  });
+}
+
+// CART FUNCTION
+function addToCart(i) {
+  let qty = Number(document.getElementById('qty'+i).value);
+  let product = {...products[i], quantity: qty};
+  let existing = cart.find(c => c.name === product.name);
+  if(existing){
+    existing.quantity += qty;
+  } else {
+    cart.push(product);
+  }
+  renderCart();
+}
+
+function renderCart() {
+  cartItems.innerHTML = '';
+  let total = 0;
+  cart.forEach(c => {
+    cartItems.innerHTML += `<li>${c.name} x ${c.quantity} - ₹${c.price * c.quantity}</li>`;
+    total += c.price * c.quantity;
+  });
+  document.getElementById('total').innerText = total;
+}
+
+// REVIEWS
+function addReview(i) {
+  let text = document.getElementById('review'+i).value.trim();
+  if(!text) return;
+  products[i].reviews.push(text);
+  document.getElementById('review'+i).value = '';
+  renderReviews(i);
+}
+
+function renderReviews(i) {
+  const reviewDiv = document.getElementById('reviews'+i);
+  reviewDiv.innerHTML = '';
+  products[i].reviews.forEach(r => {
+    reviewDiv.innerHTML += `<div class="review">• ${r}</div>`;
+  });
+}
+</script>
+
+</body>
+</html>
